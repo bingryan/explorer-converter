@@ -1,0 +1,1 @@
+pub use substrate_subxt::NodeTemplateRuntime;

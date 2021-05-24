@@ -4,6 +4,7 @@ mod cli;
 mod cmd;
 pub mod config;
 mod tasks;
+mod runtime;
 
 use anyhow::Result;
 use env_logger::Env;

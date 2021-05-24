@@ -33,3 +33,6 @@ serde_json = "1.0"
 
 num_cpus = "1.13.0"
 
+substrate-subxt = { git = "https://github.com/paritytech/substrate-subxt.git", default-features = false, features = ["client"], tag = "v0.15.0" }
+
+
