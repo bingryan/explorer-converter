@@ -1,0 +1,15 @@
+[meilisearch]
+host = "http://192.168.2.19:7700"
+apikey = "masterKey"
+
+[log]
+log_dir = "logs/"
+log_cup = 1000
+temp_size = "100MB"
+zip_compress = true
+rolling_type = "All"
+level = "info"
+debug = true
+max_size = "1024MB"
+file_name = "explorer.log"
+
