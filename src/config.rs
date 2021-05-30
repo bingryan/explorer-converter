@@ -21,7 +21,7 @@ pub struct AppState<'a, T: Runtime> {
 impl<T: Runtime> AppState<'_, T> {
     pub fn new(settings: &Settings) -> AppState<T> {
         let chain_rpc_url = env::var("CHAIN_RPC_URL").ok()
-            .unwrap_or_else(|| "ws://127.0.0.1:9944".to_string());
+            .unwrap_or_else(|| (&settings.chain.rpc_url).to_string());
 
         let sub_client = ClientBuilder::<dyn Runtime>::new()
             .set_url(chain_rpc_url)
@@ -47,6 +47,11 @@ pub struct MeiliSearch {
 }
 
 #[derive(Debug, Deserialize, Clone)]
+pub struct Chain {
+    pub rpc_url: String,
+}
+
+#[derive(Debug, Deserialize, Clone)]
 pub struct ExplorerLog {
     pub log_dir: String,
     pub log_cup: usize,
@@ -64,6 +69,7 @@ pub struct ExplorerLog {
 pub struct Settings {
     pub log: ExplorerLog,
     pub meilisearch: MeiliSearch,
+    pub chain: Chain,
 }
 
 impl Settings {
