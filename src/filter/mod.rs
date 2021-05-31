@@ -14,6 +14,6 @@ pub trait Filter: Any + Send + Sync {
     /// fingerprint
     fn fingerprint(self) -> bool;
 
-    /// clear filter queue
+    /// clear filter collections
     fn clear(self) -> bool;
 }

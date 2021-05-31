@@ -8,6 +8,7 @@ mod runtime;
 mod log;
 mod filter;
 mod scheduler;
+mod collections;
 
 use anyhow::Result;
 use env_logger::Env;
