@@ -32,6 +32,10 @@ serde_derive = "1.0.125"
 
 config = "0.11"
 
+# Filter
+codec = { package = "parity-scale-codec", version = "2.1.1", default-features = false, features = ["derive"] }
+
+
 
 # error handling
 anyhow = "1.0.40"

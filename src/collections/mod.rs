@@ -8,6 +8,12 @@ pub trait HasQueue<T: Clone> {
     fn len(&mut self) -> usize;
 }
 
+pub trait InputOutputSerialization<T: Clone> {
+    fn encode(&self, element: T) -> &[u8];
+    fn decode(&self, encoded_element: &[u8]) -> T;
+}
+
+
 #[derive(Debug)]
 pub struct BufferQueue<T: Clone> {
     queue: Vec<T>,

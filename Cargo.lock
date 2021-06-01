@@ -1013,6 +1013,7 @@ dependencies = [
  "log",
  "meilisearch-sdk",
  "num_cpus",
+ "parity-scale-codec",
  "serde 1.0.125",
  "serde_derive",
  "serde_json",
