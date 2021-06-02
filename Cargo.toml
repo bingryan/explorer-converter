@@ -17,6 +17,13 @@ exclude = [
 path = "src/main.rs"
 name = "explorer"
 
+[features]
+default = ["kusama"]
+
+# runtime
+kusama = []
+node_template = []
+
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
@@ -35,7 +42,7 @@ config = "0.11"
 # Filter
 codec = { package = "parity-scale-codec", version = "2.1.1", default-features = false, features = ["derive"] }
 
-
+redis = { version = "0.20.1", features = ["tokio-comp"] }
 
 # error handling
 anyhow = "1.0.40"
@@ -53,6 +60,6 @@ num_cpus = "1.13.0"
 # https://github.com/jaemk/cached
 cached = "0.23.0"
 
-substrate-subxt = { git = "https://github.com/paritytech/substrate-subxt.git", default-features = false, features = ["client"], tag = "v0.15.0" }
+substrate-subxt = { git = "https://github.com/paritytech/substrate-subxt.git", default-features = false, features = ["client","tokio1"], branch = "master"}
 
 

@@ -1,9 +1,14 @@
+use anyhow::Result;
 use config::{ConfigError, Config, File};
 use std::result;
 use std::env;
 use std::path::PathBuf;
+use redis::Client as RedisClient;
 use meilisearch_sdk::client::Client;
 use substrate_subxt::{Runtime, ClientBuilder, Client as SubClient};
+use std::time::Duration;
+
+pub const REDIS_TIMEOUT: Duration = Duration::from_secs(3);
 
 pub const QUEUE_NAME: &str = "explorer";
 
@@ -15,27 +20,32 @@ pub const CONFIG_FILE: &'static str = "explorer.toml";
 pub struct AppState<'a, T: Runtime> {
     pub meili_client: Client<'a>,
     pub sub_client: SubClient<T>,
+    pub redis_client: RedisClient,
 }
 
 
 impl<T: Runtime> AppState<'_, T> {
-    pub fn new(settings: &Settings) -> AppState<T> {
+    pub async fn new(settings: &Settings) -> Result<AppState<'_, T>> {
         let chain_rpc_url = env::var("CHAIN_RPC_URL").ok()
             .unwrap_or_else(|| (&settings.chain.rpc_url).to_string());
 
-        let sub_client = ClientBuilder::<dyn Runtime>::new()
+        let sub_client = ClientBuilder::<T>::new()
             .set_url(chain_rpc_url)
-            .build()
-            .await?;
+            .build().await?;
 
+        let redis_url = env::var("REDIS_URL").ok()
+            .unwrap_or_else(|| (&settings.redis.url).to_string());
 
-        AppState {
+        let redis_client = redis::Client::open(redis_url)?;
+
+        Ok(AppState {
             meili_client: Client::new(
                 &settings.meilisearch.host,
                 &settings.meilisearch.apikey,
             ),
             sub_client,
-        }
+            redis_client,
+        })
     }
 }
 
@@ -49,6 +59,11 @@ pub struct MeiliSearch {
 #[derive(Debug, Deserialize, Clone)]
 pub struct Chain {
     pub rpc_url: String,
+}
+
+#[derive(Debug, Deserialize, Clone)]
+pub struct Redis {
+    pub url: String,
 }
 
 #[derive(Debug, Deserialize, Clone)]
@@ -70,6 +85,7 @@ pub struct Settings {
     pub log: ExplorerLog,
     pub meilisearch: MeiliSearch,
     pub chain: Chain,
+    pub redis: Redis,
 }
 
 impl Settings {

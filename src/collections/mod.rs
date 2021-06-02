@@ -2,9 +2,9 @@ use anyhow::{Result, Error};
 
 
 pub trait HasQueue<T: Clone> {
-    fn push(&mut self, element: T) -> Result<T>;
+    fn push(&mut self, element: T) -> Result<()>;
     fn pop(&mut self) -> Result<T>;
-    fn clear(&mut self)-> Result<T>;
+    fn clear(&mut self)-> Result<()>;
     fn len(&mut self) -> usize;
 }
 
@@ -23,7 +23,7 @@ pub struct FifoQueue<T: Clone> {
 
 impl<T: Clone> FifoQueue<T> {
     pub fn new(capacity: usize) -> FifoQueue<T> {
-        BufferQueue {
+        FifoQueue {
             queue: vec![],
             capacity,
         }
@@ -35,27 +35,27 @@ impl<T: Clone> FifoQueue<T> {
 }
 
 impl<T: Clone> HasQueue<T> for FifoQueue<T> {
-    fn push(&mut self, element: T) -> Result<T> {
+    fn push(&mut self, element: T) -> Result<()> {
         if self.queue.len() < self.capacity {
-            self.queue.push(val);
-            Ok(element)
+            self.queue.push(element);
+            Ok(())
         } else {
-            Error::msg("FifoQueue is full")
+            Err(Error::msg("FifoQueue is full"))
         }
     }
 
     fn pop(&mut self) -> Result<T> {
         match self.queue.first() {
-            Some(val) => val.clone(),
-            None => Error::msg("FifoQueue is empty")
+            Some(val) => Ok(val.clone()),
+            None => Err(Error::msg("FifoQueue is empty"))
         }
     }
 
-    fn clear(&mut self) -> Result<T> {
+    fn clear(&mut self) -> Result<()> {
         if self.queue.len() > 0 {
             Ok(self.queue.clear())
         } else {
-            Error::msg("FifoQueue is empty")
+            Err(Error::msg("FifoQueue is empty"))
         }
     }
 
@@ -77,7 +77,7 @@ pub struct LifoQueue<T: Clone> {
 
 impl<T: Clone> LifoQueue<T> {
     pub fn new(capacity: usize) -> LifoQueue<T> {
-        BufferQueue {
+        LifoQueue {
             queue: vec![],
             capacity,
         }
@@ -89,27 +89,27 @@ impl<T: Clone> LifoQueue<T> {
 }
 
 impl<T: Clone> HasQueue<T> for LifoQueue<T> {
-    fn push(&mut self, element: T) -> Result<T> {
+    fn push(&mut self, element: T) -> Result<()> {
         if self.queue.len() < self.capacity {
-            self.queue.push(val);
-            Ok(element)
+            self.queue.push(element);
+            Ok(())
         } else {
-            Error::msg("LifoQueue is full")
+            Err(Error::msg("LifoQueue is full"))
         }
     }
 
     fn pop(&mut self) -> Result<T> {
         match self.queue.pop() {
-            Some(val) => val.clone(),
-            None => Error::msg("LifoQueue is empty")
+            Some(val) => Ok(val.clone()),
+            None => Err(Error::msg("LifoQueue is empty"))
         }
     }
 
-    fn clear(&mut self) -> Result<T> {
+    fn clear(&mut self) -> Result<()> {
         if self.queue.len() > 0 {
             Ok(self.queue.clear())
         } else {
-            Error::msg("LifoQueue is empty")
+            Err(Error::msg("LifoQueue is empty"))
         }
     }
 

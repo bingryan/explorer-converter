@@ -1,14 +1,17 @@
 #![allow(unused_variables)]
+#[macro_use]
+extern crate serde_derive;
 
 mod cli;
 mod cmd;
-pub mod config;
 mod tasks;
 mod runtime;
 mod log;
 mod filter;
 mod scheduler;
 mod collections;
+pub mod config;
+
 
 use anyhow::Result;
 use env_logger::Env;
@@ -16,14 +19,12 @@ use std::env;
 use tokio::time::Duration;
 use crate::cmd::producer::Producer;
 use crate::cmd::consumer::Consumer;
-use crate::config::{QUEUE_NAME, CELERY_HEARTBEAT, CONFIG_FILE, Settings, ExplorerLog, AppState};
-
-
+use crate::config::{QUEUE_NAME, CELERY_HEARTBEAT, CONFIG_FILE, REDIS_TIMEOUT, Settings, ExplorerLog, AppState};
+use crate::runtime::Runtime;
 
 
 #[tokio::main]
 async fn main() -> Result<()> {
-
     dotenv::dotenv().ok();
 
     let config_file = env::current_dir()?.join(CONFIG_FILE);
@@ -33,8 +34,7 @@ async fn main() -> Result<()> {
 
     ExplorerLog::init(&settings);
 
-    let bind_address = &settings.server.bind_address;
-    let state = AppState::new(&settings);
+    let state = AppState::<Runtime>::new(&settings).await?;
 
     let meili_client = state.meili_client;
     let meili_client_state = meili_client.is_healthy().await;
@@ -44,6 +44,10 @@ async fn main() -> Result<()> {
                      &settings.meilisearch.apikey);
         std::process::exit(101);
     }
+
+    let redis_client = state.redis_client;
+
+    let mut redis_con =redis_client.get_connection_with_timeout(REDIS_TIMEOUT)?;
 
     let matches = cli::build_cli().get_matches();
 

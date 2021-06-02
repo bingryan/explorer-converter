@@ -9,7 +9,7 @@ pub trait Filter: Any + Send + Sync {
     fn name(&self) -> &'static str;
 
     /// load settings
-    fn from_settings(settings: &Settings) -> Box<dyn Filter>;
+    fn build(&self,settings: &Settings) -> Box<dyn Filter>;
 
     /// fingerprint
     fn fingerprint(self) -> bool;

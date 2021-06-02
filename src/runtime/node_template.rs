@@ -1,1 +1,1 @@
-pub use substrate_subxt::NodeTemplateRuntime;
+pub use substrate_subxt::NodeTemplateRuntime as Runtime;

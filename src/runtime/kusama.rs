@@ -1,1 +1,1 @@
-pub use substrate_subxt::KusamaRuntime;
+pub use substrate_subxt::KusamaRuntime as Runtime;

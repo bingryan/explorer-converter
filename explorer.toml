@@ -5,6 +5,9 @@ rpc_url = "ws://127.0.0.1:9944"
 host = "http://192.168.2.19:7700"
 apikey = "masterKey"
 
+[redis]
+url = "redis://127.0.0.1/"
+
 [log]
 log_dir = "logs/"
 log_cup = 1000
