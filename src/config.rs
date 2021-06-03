@@ -10,7 +10,7 @@ use std::time::Duration;
 
 pub const REDIS_TIMEOUT: Duration = Duration::from_secs(3);
 
-pub const QUEUE_NAME: &str = "explorer";
+pub const QUEUE_NAME: &'static str = "explorer";
 
 pub const CELERY_HEARTBEAT: Option<u16> = Some(10);
 

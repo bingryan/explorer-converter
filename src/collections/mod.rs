@@ -1,3 +1,4 @@
+use async_trait::async_trait;
 use anyhow::{Result, Error};
 use codec::{Encode, Decode, Error as CodecError};
 
@@ -8,18 +9,27 @@ pub trait HasQueue<T: Clone> {
     fn len(&mut self) -> usize;
 }
 
+#[async_trait]
+pub trait HasAsyncQueue<T: Clone> {
+    async fn push(&mut self, element: &T) -> Result<()>;
+    async fn pop(&mut self) -> Result<T>;
+    async fn clear(&mut self) -> Result<()>;
+    async fn len(&mut self) -> Result<usize>;
+}
+
 /// input out serialize
-pub trait CodecSerialization<T: Clone + Encode> {
+pub trait CodecSerialization<T: Clone + Encode + Decode + ?Sized> {
     fn name(&self) -> &'static str;
 
     /// encode input value
-    fn encode(&self, element: T) -> &[u8] {
+    fn encode(&self, element: Box<&T>) -> &[u8] {
         &element.encode()
     }
 
     /// decode element
-    fn decode(&self, encoded_element: &mut [u8]) -> Result<T, CodecError> {
-        T::decode(encoded_element)
+    fn decode(&self, encoded_element: &Vec<u8>) -> Result<Box<T>, CodecError> {
+        let mut ele: &[u8] = encoded_element;
+        Box::<T>::decode(&mut ele)
     }
 }
 
@@ -133,46 +143,52 @@ impl<T: Clone> HasQueue<T> for LifoQueue<T> {
 }
 
 
-use redis::Client as RedisClient;
+use redis::{Client as RedisClient, aio::Connection, AsyncCommands, RedisResult};
+use crate::config::REDIS_TIMEOUT;
 
 /// RedisLifoQueue is FIFO Queue data structure by memory
-#[derive(Debug)]
-pub struct RedisLifoQueue<T: Clone> {
-    pub redis_client: RedisClient,
-    pub key: String,
+pub struct RedisLifoQueue<'a> {
+    pub redis_connection: Connection,
+    pub key: &'a str,
 }
 
-impl<T: Clone> RedisLifoQueue<T> {
-    pub fn new(redis_client: RedisClient, key: String) -> RedisLifoQueue<T> {
+impl<'a> RedisLifoQueue<'a> {
+    pub fn new(redis_connection: Connection, key: &str) -> RedisLifoQueue {
         RedisLifoQueue {
-            redis_client,
+            redis_connection,
             key,
         }
     }
 }
 
-impl<T: Clone + Encode> CodecSerialization<T> for RedisLifoQueue<T> {
+impl<'a, T: Clone + Send + Encode + Decode> CodecSerialization<T> for RedisLifoQueue<'a> {
     fn name(&self) -> &'static str {
         "redis-lifo-queue"
     }
 }
 
-impl<T: Clone> HasQueue<T> for RedisLifoQueue<T> {
-    fn push(&mut self, element: T) -> Result<()> {
-        // self.redis_client.
-        todo!()
+#[async_trait]
+impl<'a, T: Clone + Send + Encode + Decode> HasAsyncQueue<T> for RedisLifoQueue<'a> {
+    async fn push(&mut self, element: &T) -> Result<()> {
+        let mut encode_res: &[u8] = self.encode(Box::new(element));
+        let res = self.redis_connection.lpush::<&str, &[u8], ()>(self.key, encode_res).await?;
+        Ok(res)
     }
 
-    fn pop(&mut self) -> Result<T> {
-        todo!()
+    async fn pop(&mut self) -> Result<T> {
+        let pop_res = self.redis_connection.lpop(self.key).await?;
+        let mut encode_res: &[u8] = pop_res;
+        T::decode(&mut encode_res).map_err(|_| Error::msg("RedisLifoQueue pop decode error"))
     }
 
-    fn clear(&mut self) -> Result<()> {
-        todo!()
+    async fn clear(&mut self) -> Result<()> {
+        self.redis_connection.del(self.key).await?;
+        Ok(())
     }
 
-    fn len(&mut self) -> usize {
-        todo!()
+    async fn len(&mut self) -> Result<usize> {
+        let res = self.redis_connection.llen(self.key).await?;
+        Ok(res)
     }
 }
 
