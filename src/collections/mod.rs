@@ -10,10 +10,14 @@ pub trait HasQueue<T: Clone> {
 
 /// input out serialize
 pub trait CodecSerialization<T: Clone + Encode> {
+    fn name(&self) -> &'static str;
+
     /// encode input value
     fn encode(&self, element: T) -> &[u8] {
         &element.encode()
     }
+
+    /// decode element
     fn decode(&self, encoded_element: &mut [u8]) -> Result<T, CodecError> {
         T::decode(encoded_element)
     }
@@ -138,13 +142,18 @@ pub struct RedisLifoQueue<T: Clone> {
     pub key: String,
 }
 
-//  TODO: add serialize trait
 impl<T: Clone> RedisLifoQueue<T> {
     pub fn new(redis_client: RedisClient, key: String) -> RedisLifoQueue<T> {
         RedisLifoQueue {
             redis_client,
             key,
         }
+    }
+}
+
+impl<T: Clone + Encode> CodecSerialization<T> for RedisLifoQueue<T> {
+    fn name(&self) -> &'static str {
+        "redis-lifo-queue"
     }
 }
 
