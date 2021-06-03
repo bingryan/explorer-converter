@@ -37,7 +37,6 @@ async fn main() -> Result<()> {
 
     let state = AppState::<Runtime>::new(&settings).await?;
 
-    // let meili_client = state.meili_client;
     let meili_client_state = state.meili_client.is_healthy().await;
     if !meili_client_state {
         llog::error!("Could not ping meilisearch server to address {} with apikey: {}",

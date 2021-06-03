@@ -1,16 +1,22 @@
 use anyhow::{Result, Error};
-
+use codec::{Encode, Decode, Error as CodecError};
 
 pub trait HasQueue<T: Clone> {
     fn push(&mut self, element: T) -> Result<()>;
     fn pop(&mut self) -> Result<T>;
-    fn clear(&mut self)-> Result<()>;
+    fn clear(&mut self) -> Result<()>;
     fn len(&mut self) -> usize;
 }
 
-pub trait InputOutputSerialization<T: Clone> {
-    fn encode(&self, element: T) -> &[u8];
-    fn decode(&self, encoded_element: &[u8]) -> T;
+/// input out serialize
+pub trait CodecSerialization<T: Clone + Encode> {
+    /// encode input value
+    fn encode(&self, element: T) -> &[u8] {
+        &element.encode()
+    }
+    fn decode(&self, encoded_element: &mut [u8]) -> Result<T, CodecError> {
+        T::decode(encoded_element)
+    }
 }
 
 
@@ -122,5 +128,43 @@ impl<T: Clone> HasQueue<T> for LifoQueue<T> {
     }
 }
 
+
+use redis::Client as RedisClient;
+
+/// RedisLifoQueue is FIFO Queue data structure by memory
+#[derive(Debug)]
+pub struct RedisLifoQueue<T: Clone> {
+    pub redis_client: RedisClient,
+    pub key: String,
+}
+
+//  TODO: add serialize trait
+impl<T: Clone> RedisLifoQueue<T> {
+    pub fn new(redis_client: RedisClient, key: String) -> RedisLifoQueue<T> {
+        RedisLifoQueue {
+            redis_client,
+            key,
+        }
+    }
+}
+
+impl<T: Clone> HasQueue<T> for RedisLifoQueue<T> {
+    fn push(&mut self, element: T) -> Result<()> {
+        // self.redis_client.
+        todo!()
+    }
+
+    fn pop(&mut self) -> Result<T> {
+        todo!()
+    }
+
+    fn clear(&mut self) -> Result<()> {
+        todo!()
+    }
+
+    fn len(&mut self) -> usize {
+        todo!()
+    }
+}
 
 
