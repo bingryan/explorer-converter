@@ -146,7 +146,7 @@ impl<T: Clone> HasQueue<T> for LifoQueue<T> {
 use redis::{Client as RedisClient, aio::Connection, AsyncCommands, RedisResult};
 use crate::config::REDIS_TIMEOUT;
 
-/// RedisLifoQueue is FIFO Queue data structure by memory
+/// RedisLifoQueue is Lifo Queue data structure by memory
 pub struct RedisLifoQueue<'a> {
     pub redis_connection: Connection,
     pub key: &'a str,
@@ -193,3 +193,49 @@ impl<'a, T: Clone + Encode + Decode + Sync> HasAsyncQueue<T> for RedisLifoQueue<
 }
 
 
+
+/// RedisFifoQueue is FIFO Queue data structure by memory
+pub struct RedisFifoQueue<'a> {
+    pub redis_connection: Connection,
+    pub key: &'a str,
+}
+
+impl<'a> RedisFifoQueue<'a> {
+    pub fn new(redis_connection: Connection, key: &str) -> RedisFifoQueue {
+        RedisFifoQueue {
+            redis_connection,
+            key,
+        }
+    }
+}
+
+impl<'a, T: Clone + Encode + Decode> CodecSerialization<T> for RedisFifoQueue<'a> {
+    fn name(&self) -> &'static str {
+        "redis-fifo-queue"
+    }
+}
+
+#[async_trait]
+impl<'a, T: Clone + Encode + Decode + Sync> HasAsyncQueue<T> for RedisFifoQueue<'a> {
+    async fn push(&mut self, element: &Box<T>) -> Result<()> {
+        let mut encode_res: Vec<u8> = self.encode(&element);
+        let res = self.redis_connection.lpush::<&str, &[u8], ()>(self.key, encode_res.as_ref()).await?;
+        Ok(res)
+    }
+
+    async fn pop(&mut self) -> Result<Box<T>> {
+        let pop_res:Vec<u8> = self.redis_connection.rpop::<&str, Vec<u8>>(self.key).await?;
+        let mut encode_res: &[u8] = &pop_res;
+        Box::<T>::decode(&mut encode_res).map_err(|_| Error::msg("RedisFifoQueue pop decode error"))
+    }
+
+    async fn clear(&mut self) -> Result<()> {
+        self.redis_connection.del(self.key).await?;
+        Ok(())
+    }
+
+    async fn len(&mut self) -> Result<usize> {
+        let res = self.redis_connection.llen(self.key).await?;
+        Ok(res)
+    }
+}
