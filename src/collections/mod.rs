@@ -11,8 +11,8 @@ pub trait HasQueue<T: Clone> {
 
 #[async_trait]
 pub trait HasAsyncQueue<T: Clone> {
-    async fn push(&mut self, element: &T) -> Result<()>;
-    async fn pop(&mut self) -> Result<T>;
+    async fn push(&mut self, element: &Box<T>) -> Result<()>;
+    async fn pop(&mut self) -> Result<Box<T>>;
     async fn clear(&mut self) -> Result<()>;
     async fn len(&mut self) -> Result<usize>;
 }
@@ -22,8 +22,8 @@ pub trait CodecSerialization<T: Clone + Encode + Decode + ?Sized> {
     fn name(&self) -> &'static str;
 
     /// encode input value
-    fn encode(&self, element: Box<&T>) -> &[u8] {
-        &element.encode()
+    fn encode(&self, element: &Box<T>) -> Vec<u8> {
+        element.encode()
     }
 
     /// decode element
@@ -161,24 +161,24 @@ impl<'a> RedisLifoQueue<'a> {
     }
 }
 
-impl<'a, T: Clone + Send + Encode + Decode> CodecSerialization<T> for RedisLifoQueue<'a> {
+impl<'a, T: Clone + Encode + Decode> CodecSerialization<T> for RedisLifoQueue<'a> {
     fn name(&self) -> &'static str {
         "redis-lifo-queue"
     }
 }
 
 #[async_trait]
-impl<'a, T: Clone + Send + Encode + Decode> HasAsyncQueue<T> for RedisLifoQueue<'a> {
-    async fn push(&mut self, element: &T) -> Result<()> {
-        let mut encode_res: &[u8] = self.encode(Box::new(element));
-        let res = self.redis_connection.lpush::<&str, &[u8], ()>(self.key, encode_res).await?;
+impl<'a, T: Clone + Encode + Decode + Sync> HasAsyncQueue<T> for RedisLifoQueue<'a> {
+    async fn push(&mut self, element: &Box<T>) -> Result<()> {
+        let mut encode_res: Vec<u8> = self.encode(&element);
+        let res = self.redis_connection.lpush::<&str, &[u8], ()>(self.key, encode_res.as_ref()).await?;
         Ok(res)
     }
 
-    async fn pop(&mut self) -> Result<T> {
-        let pop_res = self.redis_connection.lpop(self.key).await?;
-        let mut encode_res: &[u8] = pop_res;
-        T::decode(&mut encode_res).map_err(|_| Error::msg("RedisLifoQueue pop decode error"))
+    async fn pop(&mut self) -> Result<Box<T>> {
+        let pop_res:Vec<u8> = self.redis_connection.lpop::<&str, Vec<u8>>(self.key).await?;
+        let mut encode_res: &[u8] = &pop_res;
+        Box::<T>::decode(&mut encode_res).map_err(|_| Error::msg("RedisLifoQueue pop decode error"))
     }
 
     async fn clear(&mut self) -> Result<()> {
