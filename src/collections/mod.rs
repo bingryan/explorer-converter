@@ -17,6 +17,14 @@ pub trait HasAsyncQueue<T: Clone> {
     async fn len(&mut self) -> Result<usize>;
 }
 
+#[async_trait]
+pub trait HasAsyncPriorityQueue<T: Clone> {
+    async fn push(&mut self, element: &Box<T>,priority: Option<i32>) -> Result<()>;
+    async fn pop(&mut self) -> Result<Box<T>>;
+    async fn clear(&mut self) -> Result<()>;
+    async fn len(&mut self) -> Result<usize>;
+}
+
 /// input out serialize
 pub trait CodecSerialization<T: Clone + Encode + Decode + ?Sized> {
     fn name(&self) -> &'static str;
@@ -146,7 +154,7 @@ impl<T: Clone> HasQueue<T> for LifoQueue<T> {
 use redis::{Client as RedisClient, aio::Connection, AsyncCommands, RedisResult};
 use crate::config::REDIS_TIMEOUT;
 
-/// RedisLifoQueue is Lifo Queue data structure by memory
+/// RedisLifoQueue is Lifo Queue data structure by redis
 pub struct RedisLifoQueue<'a> {
     pub redis_connection: Connection,
     pub key: &'a str,
@@ -176,7 +184,7 @@ impl<'a, T: Clone + Encode + Decode + Sync> HasAsyncQueue<T> for RedisLifoQueue<
     }
 
     async fn pop(&mut self) -> Result<Box<T>> {
-        let pop_res:Vec<u8> = self.redis_connection.lpop::<&str, Vec<u8>>(self.key).await?;
+        let pop_res: Vec<u8> = self.redis_connection.lpop::<&str, Vec<u8>>(self.key).await?;
         let mut encode_res: &[u8] = &pop_res;
         Box::<T>::decode(&mut encode_res).map_err(|_| Error::msg("RedisLifoQueue pop decode error"))
     }
@@ -193,8 +201,7 @@ impl<'a, T: Clone + Encode + Decode + Sync> HasAsyncQueue<T> for RedisLifoQueue<
 }
 
 
-
-/// RedisFifoQueue is FIFO Queue data structure by memory
+/// RedisFifoQueue is FIFO Queue data structure by redis
 pub struct RedisFifoQueue<'a> {
     pub redis_connection: Connection,
     pub key: &'a str,
@@ -224,7 +231,7 @@ impl<'a, T: Clone + Encode + Decode + Sync> HasAsyncQueue<T> for RedisFifoQueue<
     }
 
     async fn pop(&mut self) -> Result<Box<T>> {
-        let pop_res:Vec<u8> = self.redis_connection.rpop::<&str, Vec<u8>>(self.key).await?;
+        let pop_res: Vec<u8> = self.redis_connection.rpop::<&str, Vec<u8>>(self.key).await?;
         let mut encode_res: &[u8] = &pop_res;
         Box::<T>::decode(&mut encode_res).map_err(|_| Error::msg("RedisFifoQueue pop decode error"))
     }
@@ -239,3 +246,64 @@ impl<'a, T: Clone + Encode + Decode + Sync> HasAsyncQueue<T> for RedisFifoQueue<
         Ok(res)
     }
 }
+
+/// RedisPriorityQueue is Priority Queue data structure by redis
+pub struct RedisPriorityQueue<'a> {
+    pub redis_connection: Connection,
+    pub key: &'a str,
+}
+
+impl<'a> RedisPriorityQueue<'a> {
+    pub fn new(redis_connection: Connection, key: &str) -> RedisPriorityQueue {
+        RedisPriorityQueue {
+            redis_connection,
+            key,
+        }
+    }
+}
+
+impl<'a, T: Clone + Encode + Decode> CodecSerialization<T> for RedisPriorityQueue<'a> {
+    fn name(&self) -> &'static str {
+        "redis-priority-queue"
+    }
+}
+
+#[async_trait]
+impl<'a, T: Clone + Encode + Decode + Sync> HasAsyncPriorityQueue<T> for RedisPriorityQueue<'a> {
+    async fn push(&mut self, element: &Box<T>, priority: Option<i32>) -> Result<()> {
+        let mut encode_res: Vec<u8> = self.encode(&element);
+        let mut score = Some(1);
+        if priority.is_some() {
+            score = priority
+        }
+        let res = self.redis_connection.zadd(self.key, score, encode_res).await?;
+        Ok(res)
+    }
+    async fn pop(&mut self) -> Result<Box<T>> {
+        let mut pipe = redis::pipe();
+        let results: Vec<u8>= pipe.cmd("ZRANGE")
+            .arg(self.key)
+            .arg(0)
+            .arg(0)
+            .ignore()
+            .cmd("ZREMRANGEBYRANK")
+            .arg(self.key)
+            .arg(0)
+            .arg(0)
+            .ignore()
+            .query_async(&mut self.redis_connection).await?;
+        let mut encode_res: &[u8] = &results;
+        Box::<T>::decode(&mut encode_res).map_err(|_| Error::msg("RedisPriorityQueue pop decode error"))
+    }
+
+    async fn clear(&mut self) -> Result<()> {
+        self.redis_connection.del(self.key).await?;
+        Ok(())
+    }
+
+    async fn len(&mut self) -> Result<usize> {
+        let res = self.redis_connection.zcard(self.key).await?;
+        Ok(res)
+    }
+}
+
