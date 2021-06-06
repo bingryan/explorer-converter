@@ -1,0 +1,52 @@
+version: '3'
+
+
+services:
+  converter:
+    build:
+      context: .
+      dockerfile: ./Dockerfile
+    image: api
+    container_name: explorer-converter
+    volumes:
+      - .:/app
+    stdin_open: true
+    tty: true
+    depends_on:
+      - redis
+    env_file:
+      - .env
+      - ./.envs/.local/.redis
+      - ./.envs/.local/.meilisearch
+    links:
+      - "redis:redis"
+      - "meilisearch:meilisearch"
+    ports:
+      - "8888:8888"
+    expose:
+      - '8888'
+    command: /start
+
+  redis:
+    image: redis:latest
+    restart: "no"
+    container_name: redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - ./compose/sources/redis.conf:/etc/redis/redis.conf
+      - ./data:/data
+    command: redis-server /etc/redis/redis.conf
+    privileged: true
+
+  meilisearch:
+    image: getmeili/meilisearch
+    env_file:
+      - ./.envs/.local/.meilisearch
+    volumes:
+      - ./data.ms:/data.ms
+    command: ./meilisearch --master-key=$${MASTER_KEY} --no-analytics=true
+    ports:
+      - target: 7700
+        published: 7700
+        protocol: tcp
