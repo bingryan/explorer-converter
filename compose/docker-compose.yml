@@ -2,18 +2,19 @@ version: '3'
 
 
 services:
-  converter:
+  converter-producer:
     build:
-      context: .
-      dockerfile: ./Dockerfile
-    image: api
-    container_name: explorer-converter
+      context: ..
+      dockerfile: ../Dockerfile
+    image: converter-producer
+    container_name: converter-producer
     volumes:
       - .:/app
     stdin_open: true
     tty: true
     depends_on:
       - redis
+      - meilisearch
     env_file:
       - .env
       - ./.envs/.local/.redis
@@ -25,7 +26,33 @@ services:
       - "8888:8888"
     expose:
       - '8888'
-    command: /start
+    command: /producer_start
+
+  converter-consumner:
+    build:
+      context: ..
+      dockerfile: ../Dockerfile
+    image: converter-consumner
+    container_name: converter-consumner
+    volumes:
+      - .:/app
+    stdin_open: true
+    tty: true
+    depends_on:
+      - redis
+      - meilisearch
+    env_file:
+      - .env
+      - ./.envs/.local/.redis
+      - ./.envs/.local/.meilisearch
+    links:
+      - "redis:redis"
+      - "meilisearch:meilisearch"
+    ports:
+      - "8888:8888"
+    expose:
+      - '8888'
+    command: /consumner_start
 
   redis:
     image: redis:latest
