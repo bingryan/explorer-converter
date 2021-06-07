@@ -1,24 +1,26 @@
-version: '3'
+version: '3.5'
 
 
 services:
   converter-producer:
     build:
       context: ..
-      dockerfile: ../Dockerfile
+      dockerfile: ./Dockerfile
+      args:
+        DOMAIN: cn
     image: converter-producer
     container_name: converter-producer
     volumes:
-      - .:/app
+      - ..:/app
     stdin_open: true
     tty: true
     depends_on:
       - redis
       - meilisearch
     env_file:
-      - .env
-      - ./.envs/.local/.redis
-      - ./.envs/.local/.meilisearch
+      - ../.env
+      - ../.envs/.local/.redis
+      - ../.envs/.local/.meilisearch
     links:
       - "redis:redis"
       - "meilisearch:meilisearch"
@@ -31,20 +33,22 @@ services:
   converter-consumner:
     build:
       context: ..
-      dockerfile: ../Dockerfile
+      dockerfile: ./Dockerfile
+      args:
+        DOMAIN: cn
     image: converter-consumner
     container_name: converter-consumner
     volumes:
-      - .:/app
+      - ..:/app
     stdin_open: true
     tty: true
     depends_on:
       - redis
       - meilisearch
     env_file:
-      - .env
-      - ./.envs/.local/.redis
-      - ./.envs/.local/.meilisearch
+      - ../.env
+      - ../.envs/.local/.redis
+      - ../.envs/.local/.meilisearch
     links:
       - "redis:redis"
       - "meilisearch:meilisearch"
@@ -61,17 +65,17 @@ services:
     ports:
       - "6379:6379"
     volumes:
-      - ./compose/sources/redis.conf:/etc/redis/redis.conf
-      - ./data:/data
+      - ../compose/sources/redis.conf:/etc/redis/redis.conf
+      - ../data:/data
     command: redis-server /etc/redis/redis.conf
     privileged: true
 
   meilisearch:
     image: getmeili/meilisearch
     env_file:
-      - ./.envs/.local/.meilisearch
+      - ../.envs/.local/.meilisearch
     volumes:
-      - ./data.ms:/data.ms
+      - ../data.ms:/data.ms
     command: ./meilisearch --master-key=$${MASTER_KEY} --no-analytics=true
     ports:
       - target: 7700
