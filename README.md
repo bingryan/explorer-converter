@@ -15,12 +15,6 @@ sudo docker run -idt --rm \
 sudo docker run --name redis -d -p 6379:6379 redis --requirepass "password"
 ```
 
-# error
-
-```shell
-cargo update -p jsonrpsee-utils --precise 0.2.0-alpha.3
-```
-
 
 
 ## develop
@@ -29,17 +23,23 @@ cargo update -p jsonrpsee-utils --precise 0.2.0-alpha.3
 ### build converter docker image
 
 ```shell
-sudo docker build -f Dockerfile .
+sudo docker build -f Dockerfile . -t bingryan/converter:v1
 ```
 
 #### cn
-```shell
-docker build -f Dockerfile --build-arg DOMAIN=cn .
 
+```shell
+sudo docker build --build-arg DOMAIN=cn -f Dockerfile . -t bingryan/converter:v1
 ```
 
 ### run containers 
 
 ```shell
 sudo docker-compose -f compose/docker-compose.yml up -d
+```
+
+### clear containers
+
+```shell
+sudo docker stop $(sudo docker ps -q) & sudo docker rm $(sudo docker ps -aq)
 ```

@@ -9,8 +9,5 @@ RUN if [ "$DOMAIN" = "cn" ] ; then compose/cn_build.sh ; fi
 
 RUN cargo install --path .
 
-FROM gcr.io/distroless/cc-debian10
-
-COPY --from=build /usr/local/cargo/bin/explorer /usr/local/bin/explorer
 
 CMD ["explorer"]
