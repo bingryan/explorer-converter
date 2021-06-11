@@ -1,20 +1,22 @@
 use anyhow::Result;
-use crate::config::{QUEUE_NAME, CELERY_HEARTBEAT};
+use crate::config::{QUEUE_NAME, CELERY_HEARTBEAT, AppState};
 use celery::broker::RedisBroker;
 use celery::beat::{CronSchedule, DeltaSchedule};
 use celery::task::TaskResult;
-use crate::tasks::{add, long_running_task};
+use crate::tasks::{add, long_running_task, pull};
+use substrate_subxt::Runtime;
 
 pub struct Consumer;
 
 
 impl Consumer {
-    pub async fn start() -> Result<()> {
+    pub async fn start(app_state: &AppState<'_>) -> Result<()> {
         let mut celery = celery::app!(
             broker = RedisBroker { std::env::var("REDIS_ADDR").unwrap_or_else(|_| "redis://127.0.0.1:6379/".into())},
             tasks = [
                 add,
                 long_running_task,
+                pull,
             ],
             task_routes = [
                 "*" => QUEUE_NAME,

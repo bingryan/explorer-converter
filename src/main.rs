@@ -20,7 +20,6 @@ use tokio::time::Duration;
 use crate::cmd::producer::Producer;
 use crate::cmd::consumer::Consumer;
 use crate::config::{QUEUE_NAME, CELERY_HEARTBEAT, CONFIG_FILE, REDIS_TIMEOUT, Settings, ExplorerLog, AppState};
-use crate::runtime::Runtime;
 use redis::ConnectionLike;
 
 
@@ -34,10 +33,11 @@ async fn main() -> Result<()> {
 
 
     ExplorerLog::init(&settings);
-
-    let state = AppState::<Runtime>::new(&settings).await?;
-
+    println!("this is 104");
+    let state = AppState::new(&settings).await?;
+    println!("this is 103");
     let meili_client_state = state.meili_client.is_healthy().await;
+    println!("this is 102");
     if !meili_client_state {
         llog::error!("Could not ping meilisearch server to address {} with apikey: {}",
                      &settings.meilisearch.host,
@@ -45,7 +45,7 @@ async fn main() -> Result<()> {
         std::process::exit(101);
     }
 
-
+    println!("this is 101");
     let mut redis_con = state.redis_client.get_connection_with_timeout(REDIS_TIMEOUT)?;
 
     if !redis_con.check_connection() {
@@ -59,10 +59,10 @@ async fn main() -> Result<()> {
 
     let res = match matches.subcommand() {
         ("producer", Some(matches)) => {
-            Producer::start().await
+            Producer::start(&state).await
         }
         ("consumer", Some(matches)) => {
-            Consumer::start().await
+            Consumer::start(&state).await
         }
         _ => unreachable!(),
     };

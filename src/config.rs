@@ -17,21 +17,17 @@ pub const CELERY_HEARTBEAT: Option<u16> = Some(10);
 pub const CONFIG_FILE: &'static str = "explorer.toml";
 
 
-pub struct AppState<'a, T: Runtime> {
+pub struct AppState<'a> {
     pub meili_client: Client<'a>,
-    pub sub_client: SubClient<T>,
     pub redis_client: RedisClient,
+    pub settings: Settings,
 }
 
 
-impl<T: Runtime> AppState<'_, T> {
-    pub async fn new(settings: &Settings) -> Result<AppState<'_, T>> {
+impl AppState<'_> {
+    pub async fn new(settings: &Settings) -> Result<AppState<'_>> {
         let chain_rpc_url = env::var("CHAIN_RPC_URL").ok()
             .unwrap_or_else(|| (&settings.chain.rpc_url).to_string());
-
-        let sub_client = ClientBuilder::<T>::new()
-            .set_url(chain_rpc_url)
-            .build().await?;
 
         let redis_url = env::var("REDIS_URL").ok()
             .unwrap_or_else(|| (&settings.redis.url).to_string());
@@ -43,8 +39,8 @@ impl<T: Runtime> AppState<'_, T> {
                 &settings.meilisearch.host,
                 &settings.meilisearch.apikey,
             ),
-            sub_client,
             redis_client,
+            settings: settings.to_owned(),
         })
     }
 }
