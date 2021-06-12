@@ -7,7 +7,7 @@ WORKDIR /app
 
 RUN if [ "$DOMAIN" = "cn" ] ; then compose/cn_build.sh ; fi
 
-RUN cargo install --path .
+RUN cargo install --path . --features $RUNTIME
 
 
 CMD ["explorer"]

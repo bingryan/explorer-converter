@@ -1,6 +1,6 @@
 .PHONY: install
 install:
-	cargo install --force --path .
+	cargo install --force --path . --features kusama
 
 .PHONY: clear
 clear:

@@ -26,10 +26,17 @@ sudo docker run --name redis -d -p 6379:6379 redis --requirepass "password"
 sudo docker build -f Dockerfile . -t bingryan/converter:v1
 ```
 
-#### cn
+#### default runtime for cn build
 
 ```shell
 sudo docker build --build-arg DOMAIN=cn -f Dockerfile . -t bingryan/converter:v1
+```
+
+#### default runtime for cn build
+
+
+```shell
+sudo docker build --build-arg DOMAIN=cn --build-arg RUNTIME=node_template -f Dockerfile . -t bingryan/converter:v1
 ```
 
 ### run containers 

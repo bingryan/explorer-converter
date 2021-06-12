@@ -1,14 +1,13 @@
-pub mod node_template;
-pub mod kusama;
 
-
-
-#[cfg(feature = "kusama")]
-#[path = "kusama.rs"]
-pub mod builder;
-
-#[cfg(feature = "node_template")]
-#[path = "node_template.rs"]
-pub mod builder;
-
-pub use builder::Runtime;
+cfg_if::cfg_if! {
+    if #[cfg(feature = "kusama")] {
+        pub mod kusama;
+        pub use kusama::Runtime;
+    } else if #[cfg(feature = "node_template")]  {
+        pub mod node_template;
+        pub use node_template::Runtime;
+    } else {
+        pub mod node_template;
+        pub use node_template::Runtime;
+    }
+}

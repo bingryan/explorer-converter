@@ -18,8 +18,8 @@ path = "src/main.rs"
 name = "explorer"
 
 [features]
-default = ["node_template"]
-
+default = ["kusama"]
+#default = []
 # runtime
 kusama = []
 node_template = []
@@ -29,6 +29,7 @@ node_template = []
 [dependencies]
 celery = { git = "https://github.com/rusty-celery/rusty-celery.git" }
 clap = "2.33.3"
+cfg-if = "1.0"
 
 tokio = "1.5.0"
 dotenv = "0.15.0"

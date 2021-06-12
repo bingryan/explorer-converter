@@ -12,8 +12,6 @@ pub struct Producer;
 impl Producer {
     pub async fn start(app_state: &AppState<'_>) -> Result<()> {
 
-        let settings = &app_state.settings;
-
         let mut beat = celery::beat!(
                 broker = RedisBroker { std::env::var("REDIS_ADDR").unwrap_or_else(|_| "redis://127.0.0.1:6379/".into())},
                 tasks = [
@@ -30,7 +28,7 @@ impl Producer {
                     "pull" => {
                         pull,
                         schedule = DeltaSchedule::new(Duration::from_secs(10)),
-                        args = (settings,),
+                        args = (),
                     },
                 ],
                 task_routes = [

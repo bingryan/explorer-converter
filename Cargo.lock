@@ -1001,6 +1001,7 @@ dependencies = [
  "async-trait",
  "cached",
  "celery",
+ "cfg-if 1.0.0",
  "clap",
  "config",
  "dotenv",
