@@ -18,7 +18,7 @@ path = "src/main.rs"
 name = "explorer"
 
 [features]
-default = ["kusama"]
+default = ["node_template"]
 #default = []
 # runtime
 kusama = []

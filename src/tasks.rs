@@ -4,7 +4,7 @@ use redis::ConnectionLike;
 use anyhow::{Result, Error};
 
 use crate::runtime::Runtime;
-use crate::config::{AppState, REDIS_TIMEOUT};
+use crate::config::{AppState, REDIS_TIMEOUT, Settings};
 use celery::prelude::*;
 use std::env;
 
@@ -22,7 +22,7 @@ pub(crate) fn long_running_task(secs: Option<u64>) -> TaskResult<()> {
 }
 
 #[celery::task]
-pub(crate) async fn pull() -> TaskResult<()> {
+pub(crate) async fn pull(settings: &Settings) -> TaskResult<()> {
     let client = ClientBuilder::<Runtime>::new()
         .set_url(std::env::var("CHAIN_RPC_URL").unwrap_or_else(|_| "ws://127.0.0.1:9944".into()))
         .build()
@@ -30,21 +30,17 @@ pub(crate) async fn pull() -> TaskResult<()> {
         "Chain node server error"
     })?;
 
+    println!("settings: {:?}", settings);
 
-    println!("metadata: \n {:?} \n", client.metadata());
 
-    // let block_number = 1;
-    //
-    // let block_hash = client.block_hash(Some(block_number.into())).await
-    //     .with_unexpected_err(|| {
-    //         "Chain node get block hash failed"
-    //     })?;
-    //
-    // if let Some(hash) = block_hash {
-    //     println!("Block hash for block number {}: {}", block_number, hash);
-    // } else {
-    //     println!("Block number {} not found.", block_number);
-    // }
+    let finalized_head = client.finalized_head().await.with_unexpected_err(|| {
+        "get chain node server finalized head error"
+    })?;
+
+    let finalized_block_number = client.block(Some(finalized_head)).await.with_unexpected_err(|| {
+        "get chain node server finalized head error"
+    })?;
+    //TODO: add block decode range
 
     Ok(())
 }
