@@ -11,6 +11,7 @@ mod filter;
 mod scheduler;
 mod collections;
 pub mod config;
+mod db;
 
 
 use anyhow::Result;
@@ -33,11 +34,8 @@ async fn main() -> Result<()> {
 
 
     ExplorerLog::init(&settings);
-    println!("this is 104");
     let state = AppState::new(&settings).await?;
-    println!("this is 103");
     let meili_client_state = state.meili_client.is_healthy().await;
-    println!("this is 102");
     if !meili_client_state {
         llog::error!("Could not ping meilisearch server to address {} with apikey: {}",
                      &settings.meilisearch.host,
@@ -45,7 +43,6 @@ async fn main() -> Result<()> {
         std::process::exit(101);
     }
 
-    println!("this is 101");
     let mut redis_con = state.redis_client.get_connection_with_timeout(REDIS_TIMEOUT)?;
 
     if !redis_con.check_connection() {

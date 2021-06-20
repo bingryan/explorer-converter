@@ -21,7 +21,8 @@ impl Consumer {
             task_routes = [
                 "*" => QUEUE_NAME,
             ],
-            prefetch_count = num_cpus::get() as u16,
+            // prefetch_count would be either 100 x NUM_CPUS for IO-bound tasks or 2 * NUM_CPUS for CPU-bound tasks.
+            prefetch_count = 2 * num_cpus::get() as u16,
             heartbeat = CELERY_HEARTBEAT,
         ).await?;
 

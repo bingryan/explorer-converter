@@ -22,15 +22,13 @@ pub(crate) fn long_running_task(secs: Option<u64>) -> TaskResult<()> {
 }
 
 #[celery::task]
-pub(crate) async fn pull(settings: &Settings) -> TaskResult<()> {
+pub(crate) async fn pull() -> TaskResult<()> {
     let client = ClientBuilder::<Runtime>::new()
         .set_url(std::env::var("CHAIN_RPC_URL").unwrap_or_else(|_| "ws://127.0.0.1:9944".into()))
         .build()
         .await.with_unexpected_err(|| {
         "Chain node server error"
     })?;
-
-    println!("settings: {:?}", settings);
 
 
     let finalized_head = client.finalized_head().await.with_unexpected_err(|| {

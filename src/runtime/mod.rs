@@ -1,4 +1,3 @@
-
 cfg_if::cfg_if! {
     if #[cfg(feature = "kusama")] {
         pub mod kusama;

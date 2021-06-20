@@ -30,7 +30,7 @@ impl Producer {
                     "pull" => {
                         pull,
                         schedule = DeltaSchedule::new(Duration::from_secs(10)),
-                        args = (settings),
+                        args = (),
                     },
                 ],
                 task_routes = [

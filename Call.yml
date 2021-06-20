@@ -1,20 +1,21 @@
 call:
   config:
     active:
-      openssh:
+      password:
         - dev
     runner: make
   mapping:
     src: .
-    dest: ~/workspace/sub-explorer/converter
+    dest: ~/workspace/bingryan/sub-explorer/converter
     exclude:
       - ./target
       - README.md
   server:
-    openssh:
+    password:
       dev:
         host:
-          - 192.168.2.33
+          - 192.168.1.36
         port: 22
-        authentication_type: openssh
-        username: rust
+        authentication_type: password
+        username: kunzhangs
+        password: "aa0987aa"
